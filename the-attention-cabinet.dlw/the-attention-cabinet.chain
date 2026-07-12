@@ -1,0 +1,9 @@
+ROOT0-DLW-CHAIN-v1
+index : 1256
+slug  : the-attention-cabinet
+seal  : 2041419c6c858bd11c2a99751540692abad4427d43636c1d997672e462628ebe
+prev  : 04a4051a6ba15bd39ab9f0d37501f6ae7ad4b58ae4b0310e1665b5b0eb96c538
+link  : b74c6cc8629980f708b7d8986f275748def7ebb9492d0fe6245c5a0a7e5acf2a
+head  : 5e31e430f0857f6a0f021970f674e46f7aaf237affd7a52dc6a7327b5707c88d
+
+— the tether: link = sha256(index|slug|seal|prev). the chain head commits to the whole corpus.
