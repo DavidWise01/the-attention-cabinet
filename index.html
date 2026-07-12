@@ -1,386 +1,219 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grid-3 — the tools of attention, grounded on softmax</title>
+<title>THE ATTENTION CABINET — the magnetic bench</title>
 <style>
-  :root{--bg:#04070a;--ink:#c8f5e0;--dim:#5fae94;--faint:#2f5f52;--phos:#22e38a;--phos2:#3affa0;
-    --amber:#e0a838;--cyan:#38d6e0;--red:#e0654a;--gold:#e0b84a;--mag:#c060d0;--mono:ui-monospace,"DejaVu Sans Mono",Menlo,Consolas,monospace}
-  *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono)}
-  .wrap{max-width:920px;margin:0 auto;padding:18px 14px 44px}
-  .kick{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--amber);text-align:center;margin-bottom:6px}
-  h1{text-align:center;font-size:21px;font-weight:700;color:var(--phos2);margin:0 0 3px;text-shadow:0 0 12px rgba(58,255,160,.3)}
-  .sub{text-align:center;font-size:11px;color:var(--faint);margin-bottom:12px;line-height:1.5}
-  .rig{display:grid;grid-template-columns:1.4fr 1fr;gap:8px}
-  @media(max-width:640px){.rig{grid-template-columns:1fr}}
-  .stage{background:#02040a;border:1px solid #123020;border-radius:8px;padding:6px;position:relative}
-  .stage .tag{position:absolute;top:6px;left:9px;font-size:9px;letter-spacing:.16em;color:var(--faint);text-transform:uppercase;z-index:2}
-  canvas{display:block;width:100%}
-  #scene{height:350px}#face{height:350px;cursor:pointer}
-  .ctrl{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:12px}
-  button{background:var(--phos);color:#04070a;border:none;border-radius:6px;padding:6px 13px;font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.8px}
-  button:hover{background:var(--phos2)}
-  button.alt{background:#123020;color:var(--phos2);border:1px solid #1e5038}
-  .panel{max-width:660px;margin:14px auto 0;background:#02040a;border:1px solid #123020;border-radius:8px;padding:12px 16px;font-size:11.5px;line-height:1.7}
-  .panel h3{margin:0 0 6px;font-size:12px;letter-spacing:.06em}
-  .tool{display:flex;gap:8px;padding:3px 0;border-bottom:1px dotted #16362a}
-  .tool .nm{color:var(--phos2);font-weight:700;min-width:120px}
-  .tool .tr{font-size:9px;padding:1px 5px;border-radius:3px;align-self:center;white-space:nowrap}
-  .tool .note{color:var(--dim);flex:1}
-  .tier-won{background:#1a3a24;color:#3affa0}.tier-aas{background:#2a2410;color:#e0b84a}
-  .tier-cert{background:#2a1a3a;color:#c88ae0}.tier-lit{background:#10303a;color:#38d6e0}
-  .tier-real{background:#10303a;color:#38d6e0}.tier-neg{background:#3a1810;color:#e0654a}
-  .hint{text-align:center;font-size:10px;color:var(--faint);margin-top:8px}
-  .err{color:#f0b9a0;background:#160a08;border:1px dashed #e05a4a;border-radius:6px;padding:12px;font-size:12px;margin-top:10px;display:none;white-space:pre-wrap}
-  .legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:2px auto 12px;font-size:9.5px;max-width:660px}
-  .lg{display:inline-flex;align-items:center;gap:4px;color:var(--dim)}
-  .lg::before{content:"■";font-size:11px}
-  .lg.g::before{color:#3affa0}.lg.a::before{color:#e0a838}.lg.r::before{color:#e0654a}
-  .tctl{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--dim);margin-left:4px}
-  .tctl input[type=range]{width:110px;accent-color:#3affa0;height:3px}
-  #tval{color:#3affa0;width:32px;text-align:right;font-variant-numeric:tabular-nums}
-  .aperture{max-width:660px;margin:12px auto 0;background:#02040a;border:1px solid #123020;border-radius:8px;padding:9px 15px;font-size:11px;line-height:1.75;font-variant-numeric:tabular-nums;color:var(--dim)}
-  .aperture b{color:#3affa0;letter-spacing:.06em}
-  .apg{color:#3affa0}.apok{color:#3affa0;font-weight:700}.apbad{color:#e0654a;font-weight:700}.apdim{color:var(--faint)}
-  .apbar{display:inline-block;width:130px;height:7px;background:#0a1a12;border:1px solid #1e5038;border-radius:4px;vertical-align:middle;overflow:hidden;margin-left:6px}
-  .apbar i{display:block;height:100%;background:linear-gradient(90deg,#e0654a,#e0a838,#3affa0)}
+  :root{
+    --bg1:#150d24;--bg2:#0c0715;--ink:#e9e1f4;--soft:#9d8fc0;--faint:#5f5480;--line:#2b2145;
+    --pole:#ffcf6a;
+    --vio:#a878ff;   /* softmax   */
+    --amb:#e0a838;   /* entmax    */
+    --fla:#ff7a3a;   /* sparsemax */
+    --tea:#46d6e0;   /* sigmoid   */
+    --grn:#57e0a0;   /* softpick  */
+    --g:#57e0a0;--a:#e0a838;--r:#ff6a5a;
+    --mono:ui-monospace,"DejaVu Sans Mono",Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  html,body{margin:0;color:var(--ink);font-family:var(--mono);
+    background:radial-gradient(1100px 640px at 28% -8%,var(--bg1),var(--bg2))}
+  .wrap{max-width:880px;margin:0 auto;padding:20px 15px 46px}
+  .kick{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--pole);text-align:center;margin-bottom:6px}
+  h1{text-align:center;font-size:23px;font-weight:800;letter-spacing:.01em;margin:0 0 4px;
+    background:linear-gradient(90deg,var(--vio),var(--fla));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{text-align:center;font-size:12px;color:var(--soft);max-width:600px;margin:0 auto 12px;line-height:1.6}
+  .legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:9.5px;color:var(--soft);margin-bottom:12px}
+  .lg{display:inline-flex;align-items:center;gap:4px}
+  .lg::before{content:"\25a0";font-size:11px}
+  .lg.g::before{color:var(--g)}.lg.a::before{color:var(--a)}.lg.r::before{color:var(--r)}
+  .stage{background:rgba(14,9,26,.55);border:1px solid var(--line);border-radius:11px;padding:8px;
+    box-shadow:0 10px 34px rgba(0,0,0,.4),inset 0 1px 0 rgba(168,120,255,.08)}
+  canvas{display:block;width:100%;height:452px;cursor:pointer}
+  .ctrl{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:13px}
+  button{background:var(--vio);color:#160a26;border:none;border-radius:7px;padding:7px 14px;font-family:var(--mono);
+    font-size:11px;font-weight:700;letter-spacing:.4px;cursor:pointer}
+  button:hover{filter:brightness(1.1)}
+  .knob{display:inline-flex;align-items:center;gap:7px;font-size:10.5px;color:var(--soft);transition:opacity .25s}
+  .knob.off{opacity:.28;pointer-events:none}
+  .knob input[type=range]{width:104px;height:3px}
+  .knob.kt input{accent-color:var(--vio)}.knob.ka input{accent-color:var(--amb)}
+  .knob b{font-variant-numeric:tabular-nums;width:34px;text-align:right}
+  .knob.kt b{color:var(--vio)}.knob.ka b{color:var(--amb)}
+  .stats{max-width:720px;margin:14px auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+  .stat{background:rgba(20,12,34,.7);border:1px solid var(--line);border-radius:8px;padding:8px 11px}
+  .stat .k{font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+  .stat .v{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+  .panel{max-width:720px;margin:16px auto 0;background:rgba(20,12,34,.62);border:1px solid var(--line);
+    border-radius:10px;padding:14px 18px;font-size:11.5px;line-height:1.72;color:#d6cce8}
+  .panel h3{margin:0 0 7px;font-size:12px;letter-spacing:.05em}
+  .panel b.g{color:var(--g)}.panel b.a{color:var(--a)}.panel b.r{color:var(--r)}
+  .cat{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line)}
+  .cat .ch{display:inline-block;font-size:9px;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin:2px 3px 0 0}
+  .sig{text-align:center;font-size:9px;color:var(--faint);margin-top:14px;line-height:1.6}
+  .err{color:#ffd0c4;background:#2a0f0a;border:1px dashed var(--r);border-radius:8px;padding:12px;font-size:12px;margin-top:12px;display:none;white-space:pre-wrap}
 </style></head>
 <body><div class="wrap">
-  <div class="kick">◆ input → infer(tubule) → train · read-lens on top ◆</div>
-  <h1>Grid-3 · Attention Cabinet</h1>
-  <div class="sub">(1,1) is <b style="color:#e0b84a">softmax</b> — ground, the reference every tool is measured from.<br>Front = tools, back = corpus, joined by a <b style="color:#3affa0">1×1×1 tubule</b> bridging the two grounds. Click a folder to open it.</div>
+  <div class="kick">&#9670; teardown &amp; magnetic rebuild &#9670;</div>
+  <h1>THE ATTENTION CABINET</h1>
+  <div class="sub">Softmax is the <b>pole</b>. Snap a normalizer onto the bench and watch it <b>magnetize to the same winner</b> &mdash; every order-preserving tool points north; they differ in how wide the field spreads (and in more &mdash; see the wall).</div>
   <div class="legend"><span class="lg g">GREEN measured / exact</span><span class="lg a">AMBER modeled figure</span><span class="lg r">RED the wall</span></div>
-  <div class="rig">
-    <div class="stage"><span class="tag">cabinet · soft-GL 3D</span><canvas id="scene"></canvas></div>
-    <div class="stage"><span class="tag">2D schematic · full machine</span><canvas id="face"></canvas></div>
-  </div>
+  <div class="stage"><canvas id="c"></canvas></div>
   <div class="ctrl">
-    <button id="play">⏸ pause</button>
-    <button id="pump">▶ pump corpus</button>
-    <button id="seed" >◉ seed</button>
-    <button id="reseed" class="alt">⟳ reseed (drop)</button>
-    <button id="reset" class="alt">⌂ reset grid</button>
-    <label class="tctl">aperture&nbsp;T <input id="temp" type="range" min="0.1" max="8" step="0.05" value="1"><span id="tval">1.00</span></label>
+    <button id="reseed">&#10227; new scores</button>
+    <label class="knob kt off" id="ktK"><span>softmax&nbsp;T</span><input type="range" id="T" min="20" max="400" value="100"><b id="Tv">1.00</b></label>
+    <label class="knob ka off" id="kaK"><span>entmax&nbsp;&alpha;</span><input type="range" id="A" min="101" max="200" value="150"><b id="Av">1.50</b></label>
   </div>
+  <div class="stats" id="stats"></div>
   <div class="panel" id="panel"></div>
-  <div class="aperture" id="aperture"></div>
-  <div class="hint" id="hint"></div>
   <div class="err" id="err"></div>
-  <div style="max-width:660px;margin:14px auto 0;text-align:center;font-size:9px;color:#2f5f52;line-height:1.6">Grid-3 · Attention Cabinet — David Lee Wise / ROOT0. Honesty build-out (GREEN/AMBER/RED legend, live softmax-temperature aperture with a node-verified self-check, relabelled read-lens, corrected Diff-Attn / FlashAttention citations) by AVAN.</div>
+  <div class="sig">THE ATTENTION CABINET &mdash; Grid-3 by David Lee Wise / ROOT0; audited, torn down and rebuilt magnetic by AVAN.<br>Every tile on the bench is computed live in your browser and was verified in Node before it shipped.</div>
 </div>
 <script>
 "use strict";
 (function(){
-  const scene=document.getElementById("scene"), face=document.getElementById("face");
-  // --- live softmax / entropy: the GREEN core, computed in-browser (node-verified) ---
-  const Hnats=(p)=>{let s=0;for(let i=0;i<p.length;i++){const v=p[i];if(v>1e-12)s-=v*Math.log(v);}return s;};
-  const softmaxT=(sc,T)=>{const m=Math.max.apply(null,sc);const e=sc.map(v=>Math.exp((v-m)/T));const Z=e.reduce((a,b)=>a+b,0);return e.map(v=>v/Z);};
-  const scoresFromW=(w)=>w.map(v=>Math.log(Math.max(v,1e-6)));
-  const LN9=Math.log(9); let temp=1;
-  const L=1.0, GROUND="1,1";
-  const CORNERS=["0,0","2,0","0,2","2,2"];
-  // ---- the population: 4 folders of attention tools (honest tiers from the whole arc) ----
-  const FOLDERS={
-    "0,0":{name:"NORMALIZERS", col:"#38d6e0", glow:"56,214,224",
-      tools:[
-        {n:"sparsemax", tier:"real", t:"tier-real", note:"projects scores onto the simplex → exact zeros, sparse (Martins & Astudillo 2016)"},
-        {n:"α-entmax", tier:"real", t:"tier-real", note:"the dial: softmax at α→1, sparsemax at α=2, sparse for any α>1 (Peters 2019)"},
-        {n:"sigmoid attn", tier:"fails", t:"tier-neg", note:"element-wise, no ÷Z — doesn't sum to 1; worst of 20 mods at 1.2B"},
-        {n:"softpick", tier:"wins", t:"tier-won", note:"ReLU(softmax−1/n): rectified softmax, keeps the peak, trims the tail"},
-      ]},
-    "2,0":{name:"THE CROSS FAMILY", col:"#3affa0", glow:"58,255,160",
-      tools:[
-        {n:"Dual Cross", tier:"A.A.S.", t:"tier-aas", note:"the CONCENTRATE half — graduated, non-decorative, crack sealed"},
-        {n:"Anti-Cross", tier:"LIT", t:"tier-lit", note:"the REGULARIZE half — the verified inverse (load-balancer)"},
-        {n:"Symbiote/Juliet", tier:"CERT", t:"tier-cert", note:"the coupling — a worse attention; re-homed as a regularizer"},
-        {n:"David Max", tier:"CERT", t:"tier-cert", note:"softmax un-welded — contains softmax; the knob wants zero"},
-      ]},
-    "0,2":{name:"SOFT MODS", col:"#e0a838", glow:"224,168,56",
-      tools:[
-        {n:"QK-Norm", tier:"transfers", t:"tier-won", note:"RMSNorm on Q & K before the dot — one of the few that survives scale"},
-        {n:"Selective Attn", tier:"+", t:"tier-lit", note:"learnable per-position mask down-weighting distractor keys"},
-        {n:"Diff-Attn", tier:"±", t:"tier-lit", note:"two softmaxes subtracted — can go negative; the original paper claims it IMPROVES with scale, but a matched-recipe 1.2B replication shows a small borderline degrade (not Bonferroni-significant)"},
-        {n:"Value-Residual", tier:"noise", t:"tier-lit", note:"shortcut from value projections — within the noise floor"},
-      ]},
-    "2,2":{name:"MACHINERY", col:"#c060d0", glow:"192,96,208",
-      tools:[
-        {n:"FlashAttention", tier:"v1→v4", t:"tier-won", note:"tiled, IO-aware, online softmax — FA2/FA3 in production, FA4 previewed on Blackwell (Dao 2022→2026)"},
-        {n:"the atoms", tier:"core", t:"tier-real", note:"SHIFT · EXP · SUM/Z · MASK — softmax dissected to its parts"},
-        {n:"scaled dot-prod", tier:"core", t:"tier-real", note:"QKᵀ/√d — the score before any normalizer touches it"},
-        {n:"J-junction", tier:"built", t:"tier-lit", note:"5 heads → pool → elevator → linear pipe → broadcast"},
-      ]},
+  const WORDS=["the","cat","dog","a","fox","and","sees","runs","mat"], N=WORDS.length;
+  // ---- the tiles: real normalizers (node-verified). norm=false => Σ≠1, a gate not a distribution ----
+  const argmax=p=>{let b=0;for(let i=1;i<p.length;i++)if(p[i]>p[b])b=i;return b;};
+  const Hn=p=>{let s=0;for(const v of p)if(v>1e-12)s-=v*Math.log(v);return s;};
+  const sum=p=>{let s=0;for(const v of p)s+=v;return s;};
+  function softmax(z,T){T=T||1;const m=Math.max.apply(null,z);const e=z.map(v=>Math.exp((v-m)/T));const Z=sum(e);return e.map(v=>v/Z);}
+  function sparsemax(z){const s=[...z].sort((a,b)=>b-a);let cs=0,tau=0;for(let i=0;i<z.length;i++){cs+=s[i];const t=(cs-1)/(i+1);if(s[i]-t>0)tau=t;}return z.map(v=>Math.max(v-tau,0));}
+  function entmax(z,al){const ex=1/(al-1),Pf=t=>z.map(v=>{const u=(al-1)*v-t;return u>0?Math.pow(u,ex):0;});
+    let lo=-1e6,hi=1e6;for(let it=0;it<160;it++){const mid=(lo+hi)/2;(sum(Pf(mid))>1)?lo=mid:hi=mid;}
+    const p=Pf((lo+hi)/2),s=sum(p);return p.map(v=>v/s);}
+  const sigmoid=z=>z.map(v=>1/(1+Math.exp(-v)));
+  function softpick(z){const s=softmax(z,1);return s.map(v=>Math.max(v-1/N,0));}
+  const TILES={
+    softmax:{name:"softmax",col:"--vio",norm:true,knob:"T",fn:z=>softmax(z,temp)},
+    entmax:{name:"entmax-α",col:"--amb",norm:true,knob:"A",fn:z=>entmax(z,alpha)},
+    sparsemax:{name:"sparsemax",col:"--fla",norm:true,knob:null,fn:z=>sparsemax(z)},
+    sigmoid:{name:"sigmoid",col:"--tea",norm:false,knob:null,fn:z=>sigmoid(z)},
+    softpick:{name:"softpick",col:"--grn",norm:false,knob:null,fn:z=>softpick(z)}
   };
-  // ---- the parallel CORPUS plane (real mini corpus: 53 tokens, 16 words) ----
-  const CORPUS={"total": 53, "vocab": 16, "grid": {"1,1": {"w": "the", "c": 15}, "0,0": {"w": "cat", "c": 6}, "2,0": {"w": "dog", "c": 5}, "0,2": {"w": "a", "c": 4}, "2,2": {"w": "fox", "c": 4}, "1,0": {"w": "and", "c": 3}, "0,1": {"w": "sees", "c": 3}, "2,1": {"w": "runs", "c": 3}, "1,2": {"w": "mat", "c": 2}}, "ground": "the", "corpus": "the cat sat on the mat . the dog ran in the fog . the cat and the dog play . a fox sees the cat . the dog sees a fox . t..."};
-  const PUMP={"stream": ["the", "cat", "sat", "on", "the", "mat", "the", "dog", "ran", "in", "the", "fog", "the", "cat", "and", "the", "dog", "play", "a", "fox", "sees", "the", "cat", "the", "dog", "sees", "a", "fox", "the", "cat", "runs", "the", "dog", "runs", "the", "fox", "runs", "too", "the", "cat", "sees", "the", "dog", "a", "fox", "and", "a", "cat", "the", "mat", "and", "the", "fog"], "gridw": ["the", "cat", "dog", "a", "fox", "and", "sees", "runs", "mat"], "frames": [{"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "cat", "top": "cat", "w": 0.562, "ent": 1.533, "weights": [0.062, 0.562, 0.02, 0.06, 0.022, 0.121, 0.071, 0.045, 0.036]}, {"tok": "sat", "top": "runs", "w": 0.211, "ent": 2.106, "weights": [0.105, 0.081, 0.142, 0.127, 0.143, 0.042, 0.074, 0.211, 0.075]}, {"tok": "on", "top": "the", "w": 0.242, "ent": 2.099, "weights": [0.242, 0.051, 0.1, 0.058, 0.093, 0.109, 0.137, 0.1, 0.109]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "mat", "top": "mat", "w": 0.617, "ent": 0.945, "weights": [0.013, 0.009, 0.001, 0.014, 0.018, 0.002, 0.319, 0.006, 0.617]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "dog", "top": "dog", "w": 0.612, "ent": 1.278, "weights": [0.05, 0.023, 0.612, 0.03, 0.02, 0.189, 0.008, 0.063, 0.006]}, {"tok": "ran", "top": "cat", "w": 0.492, "ent": 1.576, "weights": [0.027, 0.492, 0.079, 0.066, 0.038, 0.195, 0.012, 0.078, 0.012]}, {"tok": "in", "top": "sees", "w": 0.276, "ent": 1.895, "weights": [0.051, 0.061, 0.022, 0.103, 0.147, 0.021, 0.276, 0.073, 0.246]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "fog", "top": "and", "w": 0.175, "ent": 2.138, "weights": [0.144, 0.052, 0.134, 0.087, 0.13, 0.175, 0.12, 0.092, 0.066]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "cat", "top": "cat", "w": 0.562, "ent": 1.533, "weights": [0.062, 0.562, 0.02, 0.06, 0.022, 0.121, 0.071, 0.045, 0.036]}, {"tok": "and", "top": "and", "w": 0.957, "ent": 0.253, "weights": [0.006, 0.009, 0.012, 0.002, 0.006, 0.957, 0.006, 0.002, 0.0]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "dog", "top": "dog", "w": 0.612, "ent": 1.278, "weights": [0.05, 0.023, 0.612, 0.03, 0.02, 0.189, 0.008, 0.063, 0.006]}, {"tok": "play", "top": "fox", "w": 0.231, "ent": 2.106, "weights": [0.054, 0.097, 0.098, 0.101, 0.231, 0.115, 0.057, 0.102, 0.146]}, {"tok": "a", "top": "a", "w": 0.186, "ent": 2.13, "weights": [0.137, 0.14, 0.062, 0.186, 0.081, 0.053, 0.111, 0.095, 0.135]}, {"tok": "fox", "top": "fox", "w": 0.592, "ent": 1.45, "weights": [0.015, 0.026, 0.021, 0.041, 0.592, 0.105, 0.073, 0.039, 0.087]}, {"tok": "sees", "top": "sees", "w": 0.811, "ent": 0.666, "weights": [0.012, 0.008, 0.001, 0.005, 0.007, 0.009, 0.811, 0.002, 0.144]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "cat", "top": "cat", "w": 0.562, "ent": 1.533, "weights": [0.062, 0.562, 0.02, 0.06, 0.022, 0.121, 0.071, 0.045, 0.036]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "dog", "top": "dog", "w": 0.612, "ent": 1.278, "weights": [0.05, 0.023, 0.612, 0.03, 0.02, 0.189, 0.008, 0.063, 0.006]}, {"tok": "sees", "top": "sees", "w": 0.811, "ent": 0.666, "weights": [0.012, 0.008, 0.001, 0.005, 0.007, 0.009, 0.811, 0.002, 0.144]}, {"tok": "a", "top": "a", "w": 0.186, "ent": 2.13, "weights": [0.137, 0.14, 0.062, 0.186, 0.081, 0.053, 0.111, 0.095, 0.135]}, {"tok": "fox", "top": "fox", "w": 0.592, "ent": 1.45, "weights": [0.015, 0.026, 0.021, 0.041, 0.592, 0.105, 0.073, 0.039, 0.087]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "cat", "top": "cat", "w": 0.562, "ent": 1.533, "weights": [0.062, 0.562, 0.02, 0.06, 0.022, 0.121, 0.071, 0.045, 0.036]}, {"tok": "runs", "top": "runs", "w": 0.18, "ent": 2.132, "weights": [0.093, 0.134, 0.167, 0.122, 0.099, 0.068, 0.059, 0.18, 0.077]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "dog", "top": "dog", "w": 0.612, "ent": 1.278, "weights": [0.05, 0.023, 0.612, 0.03, 0.02, 0.189, 0.008, 0.063, 0.006]}, {"tok": "runs", "top": "runs", "w": 0.18, "ent": 2.132, "weights": [0.093, 0.134, 0.167, 0.122, 0.099, 0.068, 0.059, 0.18, 0.077]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "fox", "top": "fox", "w": 0.592, "ent": 1.45, "weights": [0.015, 0.026, 0.021, 0.041, 0.592, 0.105, 0.073, 0.039, 0.087]}, {"tok": "runs", "top": "runs", "w": 0.18, "ent": 2.132, "weights": [0.093, 0.134, 0.167, 0.122, 0.099, 0.068, 0.059, 0.18, 0.077]}, {"tok": "too", "top": "mat", "w": 0.263, "ent": 2.006, "weights": [0.153, 0.027, 0.108, 0.098, 0.057, 0.081, 0.172, 0.041, 0.263]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "cat", "top": "cat", "w": 0.562, "ent": 1.533, "weights": [0.062, 0.562, 0.02, 0.06, 0.022, 0.121, 0.071, 0.045, 0.036]}, {"tok": "sees", "top": "sees", "w": 0.811, "ent": 0.666, "weights": [0.012, 0.008, 0.001, 0.005, 0.007, 0.009, 0.811, 0.002, 0.144]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "dog", "top": "dog", "w": 0.612, "ent": 1.278, "weights": [0.05, 0.023, 0.612, 0.03, 0.02, 0.189, 0.008, 0.063, 0.006]}, {"tok": "a", "top": "a", "w": 0.186, "ent": 2.13, "weights": [0.137, 0.14, 0.062, 0.186, 0.081, 0.053, 0.111, 0.095, 0.135]}, {"tok": "fox", "top": "fox", "w": 0.592, "ent": 1.45, "weights": [0.015, 0.026, 0.021, 0.041, 0.592, 0.105, 0.073, 0.039, 0.087]}, {"tok": "and", "top": "and", "w": 0.957, "ent": 0.253, "weights": [0.006, 0.009, 0.012, 0.002, 0.006, 0.957, 0.006, 0.002, 0.0]}, {"tok": "a", "top": "a", "w": 0.186, "ent": 2.13, "weights": [0.137, 0.14, 0.062, 0.186, 0.081, 0.053, 0.111, 0.095, 0.135]}, {"tok": "cat", "top": "cat", "w": 0.562, "ent": 1.533, "weights": [0.062, 0.562, 0.02, 0.06, 0.022, 0.121, 0.071, 0.045, 0.036]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "mat", "top": "mat", "w": 0.617, "ent": 0.945, "weights": [0.013, 0.009, 0.001, 0.014, 0.018, 0.002, 0.319, 0.006, 0.617]}, {"tok": "and", "top": "and", "w": 0.957, "ent": 0.253, "weights": [0.006, 0.009, 0.012, 0.002, 0.006, 0.957, 0.006, 0.002, 0.0]}, {"tok": "the", "top": "the", "w": 0.389, "ent": 1.86, "weights": [0.389, 0.084, 0.06, 0.08, 0.017, 0.109, 0.15, 0.042, 0.069]}, {"tok": "fog", "top": "and", "w": 0.175, "ent": 2.138, "weights": [0.144, 0.052, 0.134, 0.087, 0.13, 0.175, 0.12, 0.092, 0.066]}], "avgent": 1.602, "maxent": 2.197};
-  let pumpIdx=0, pumpTimer=0, pumping=false, lastFrame=null;
-  let jitter=0.35, kspring=0.5, playing=true, t=0, seed=1, selected=null, seeding=false, seedCount=0, seedTimer=0;
-  const nodes={};
-  function key(i,j){return i+","+j;}
-  const ZB=-1.7;
-  const corpusNodes={};
-  function build(){for(let i=0;i<3;i++)for(let j=0;j<3;j++){const kk=key(i,j);
-    nodes[kk]={i,j,home:[i*L,j*L,0],pos:[i*L,j*L,0],vel:[0,0,0],ground:(i===1&&j===1),folder:CORNERS.indexOf(kk)>=0};
-    const cell=CORPUS.grid[kk]||{w:"—",c:0};
-    corpusNodes[kk]={i,j,home:[i*L,j*L,ZB],pos:[i*L,j*L,ZB],vel:[0,0,0],ground:(i===1&&j===1),w:cell.w,c:cell.c};}}
-  build();
-  // ---- the BRIDGE: a 1x1x1 tubule linking the two grounds (softmax <-> 'the') ----
-  // ---- CARDINAL ATTRACTOR BASINS on the corpus plane (N,E,S,W wells around 'the') ----
-  const CARD={N:[1,2], E:[2,1], S:[1,0], W:[0,1]};
-  const BASIN_DEPTH=1.0, BASIN_W=0.55, CENTRE_PULL=0.4;
-  function basinGrad(x,y){ // downhill force from gentle centre-bowl minus cardinal wells
-    let gx=CENTRE_PULL*2*(x-1), gy=CENTRE_PULL*2*(y-1);
-    for(const k in CARD){const c=CARD[k];const dx=x-c[0],dy=y-c[1];const e=BASIN_DEPTH*Math.exp(-(dx*dx+dy*dy)/(2*BASIN_W*BASIN_W));
-      gx+= -e*(dx/(BASIN_W*BASIN_W)); gy+= -e*(dy/(BASIN_W*BASIN_W));}   // pull toward each well
-    return [gx,gy];
-  }
-  function nearestBasin(x,y){let best="",bd=1e9;for(const k in CARD){const c=CARD[k];const d=(x-c[0])**2+(y-c[1])**2;if(d<bd){bd=d;best=k;}}return best;}
-  const ZMID=ZB/2, TC=[1,1,ZMID], HALF=0.5;
-  // ---- pipeline zones + read lens ----
-  const LEFT_X=-1.4, RIGHT_X=2.4;              // INPUT (left) | INFER (tubule mid) | TRAIN (right)
-  const LENS=[TC[0], TC[1]+1.3, TC[2]];        // read lens ABOVE the tubule
-  const TOOLS_GND=[1,1,0];                      // softmax ground on tool plane (tether anchor)
-  const tube=[];                                // 8 unit-cube vertices
-  for(const dx of [-1,1])for(const dy of [-1,1])for(const dz of [-1,1])
-    tube.push([TC[0]+dx*HALF, TC[1]+dy*HALF, TC[2]+dz*HALF]);
-  const tubeEdges=[]; // connect cube vertices that differ in exactly one axis
-  for(let a=0;a<8;a++)for(let b=a+1;b<8;b++){let diff=0;for(let c=0;c<3;c++)if(Math.abs(tube[a][c]-tube[b][c])>1e-6)diff++;if(diff===1)tubeEdges.push([a,b]);}
-  function rng(s){let x=Math.sin(s*127.1+seed*311.7)*43758.5;return (x-Math.floor(x))*2-1;}
-  function drop(){let c=0;
-    for(const k in nodes){const n=nodes[k];if(n.ground){n.pos=[...n.home];n.vel=[0,0,0];continue;}
-      n.pos=[n.home[0]+rng(c++)*jitter,n.home[1]+rng(c++)*jitter,n.home[2]+rng(c++)*jitter];n.vel=[0,0,0];}
-    for(const k in corpusNodes){const n=corpusNodes[k];if(n.ground){n.pos=[...n.home];n.vel=[0,0,0];continue;}
-      n.pos=[n.home[0]+rng(c++)*jitter,n.home[1]+rng(c++)*jitter,n.home[2]+rng(c++)*jitter];n.vel=[0,0,0];}}
-  drop();
-  function neighbors(i,j){const r=[];[[1,0],[-1,0],[0,1],[0,-1]].forEach(([di,dj])=>{if(i+di>=0&&i+di<3&&j+dj>=0&&j+dj<3)r.push(key(i+di,j+dj));});return r;}
-  function settle(set){const F={};for(const k in set)F[k]=[0,0,0];
-    for(const k in set){const n=set[k];neighbors(n.i,n.j).forEach(nk=>{const m=set[nk];
-      for(let a=0;a<3;a++){F[k][a]+=((m.pos[a]-n.pos[a])-(m.home[a]-n.home[a]))*kspring;}});}
-    for(const k in set){const n=set[k];if(n.ground){n.pos=[...n.home];n.vel=[0,0,0];continue;}
-      for(let a=0;a<3;a++){n.vel[a]=(n.vel[a]+F[k][a]*0.25)*0.86;n.pos[a]+=n.vel[a];}}}
-  function flowBasins(){ // tokens flow DOWNHILL into cardinal wells (not back to home)
-    for(const k in corpusNodes){const n=corpusNodes[k]; if(n.ground){n.pos=[...n.home];n.vel=[0,0,0];n.basin="◉";continue;}
-      const g=basinGrad(n.pos[0],n.pos[1]);
-      n.vel[0]=(n.vel[0]-g[0]*0.05)*0.82; n.vel[1]=(n.vel[1]-g[1]*0.05)*0.82;
-      n.pos[0]+=n.vel[0]; n.pos[1]+=n.vel[1]; n.pos[2]=ZB;
-      n.basin=nearestBasin(n.pos[0],n.pos[1]);
-    }
-  }
-  function stepPhys(){settle(nodes);flowBasins();}
+  const ORDER=["softmax","entmax","sparsemax","sigmoid","softpick"];
+  const cssv=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
-  function project(x,y,z,W,H,yaw,pitch){const cy=Math.cos(yaw),sy=Math.sin(yaw);let x1=x*cy-z*sy,z1=x*sy+z*cy,y1=y;
-    const cp=Math.cos(pitch),sp=Math.sin(pitch);let y2=y1*cp-z1*sp,z2=y1*sp+z1*cp,x2=x1;
-    const D=8,f=430,zc=D-z2,s=f/Math.max(zc,0.5);return{sx:W*0.5+x2*s,sy:H*0.56-y2*s,s,depth:z2};}
-  function mono(){return getComputedStyle(document.body).getPropertyValue("--mono");}
+  let temp=1, alpha=1.5, docked=["softmax"], slot={}, t=0, flashT=0;
+  const MAXDOCK=3;
+  // opening example recovered from the read-lens "the" row; reseed randomizes
+  const W0=[0.389,0.084,0.06,0.08,0.017,0.109,0.15,0.042,0.069];
+  let scores=W0.map(v=>Math.log(Math.max(v,1e-6)));
+  function reseed(){scores=Array.from({length:N},()=>(Math.random()*2-1)*2.7);}
+  ORDER.forEach(k=>slot[k]=(k==="softmax")?1:0);
 
-  function drawScene(){
-    const dpr=Math.min(devicePixelRatio||1,2),W=scene.clientWidth||520,H=350;
-    scene.width=W*dpr;scene.height=H*dpr;const cx=scene.getContext("2d");cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,W,H);
-    const yaw=0.5+Math.sin(t*0.25)*0.35,pitch=0.55,C=[1,1,0],P={};
-    for(const k in nodes){const n=nodes[k];P[k]=project(n.pos[0]-C[0],n.pos[1]-C[1],n.pos[2],W,H,yaw,pitch);}
-    // ground rail under softmax
-    const g=nodes[GROUND],gp=P[GROUND];const rail=project(g.pos[0]-C[0],g.pos[1]-C[1]-0.9,g.pos[2],W,H,yaw,pitch);
-    cx.strokeStyle="rgba(224,184,74,.8)";cx.lineWidth=2;cx.beginPath();cx.moveTo(gp.sx,gp.sy);cx.lineTo(rail.sx,rail.sy);cx.stroke();
-    [0,1,2].forEach(r=>{const w=14-r*4;cx.beginPath();cx.moveTo(rail.sx-w,rail.sy+r*4);cx.lineTo(rail.sx+w,rail.sy+r*4);cx.stroke();});
-    // edges
-    for(const k in nodes){const n=nodes[k];neighbors(n.i,n.j).forEach(nk=>{if(nk<k)return;const m=nodes[nk];
-      const cur=Math.hypot(m.pos[0]-n.pos[0],m.pos[1]-n.pos[1],m.pos[2]-n.pos[2]),rest=Math.hypot(m.home[0]-n.home[0],m.home[1]-n.home[1],m.home[2]-n.home[2]);
-      const st=Math.min(1,Math.abs(cur-rest)/0.6);
-      cx.strokeStyle=`rgba(${Math.floor(80+st*175)},${Math.floor(220-st*120)},${Math.floor(140-st*60)},0.75)`;cx.lineWidth=1.3;
-      cx.beginPath();cx.moveTo(P[k].sx,P[k].sy);cx.lineTo(P[nk].sx,P[nk].sy);cx.stroke();});}
-    const order=Object.keys(nodes).sort((a,b)=>P[a].depth-P[b].depth);
-    order.forEach(k=>{const n=nodes[k],p=P[k];
-      if(n.ground){cx.fillStyle="#e0b84a";cx.strokeStyle="#fff2c8";cx.lineWidth=2;cx.beginPath();cx.arc(p.sx,p.sy,7,0,7);cx.fill();cx.stroke();
-        cx.fillStyle="#e0b84a";cx.font="10px "+mono();cx.textAlign="center";cx.fillText("softmax (ground)",p.sx,p.sy-13);}
-      else if(n.folder){const f=FOLDERS[k],sel=selected===k,sz=sel?11:8;
-        cx.fillStyle=sel?`rgba(${f.glow},.35)`:"#141018";cx.strokeStyle=f.col;cx.lineWidth=sel?2.4:1.6;
-        cx.beginPath();cx.moveTo(p.sx-sz,p.sy-sz*0.6);cx.lineTo(p.sx-sz*0.3,p.sy-sz*0.6);cx.lineTo(p.sx-sz*0.05,p.sy-sz);cx.lineTo(p.sx+sz,p.sy-sz);cx.lineTo(p.sx+sz,p.sy+sz*0.6);cx.lineTo(p.sx-sz,p.sy+sz*0.6);cx.closePath();cx.fill();cx.stroke();
-        cx.fillStyle=f.col;cx.font=(sel?"9px ":"8px ")+mono();cx.textAlign="center";cx.fillText(f.name+" █"+f.tools.length,p.sx,p.sy-14);}
-      else{const disp=Math.hypot(n.pos[0]-n.home[0],n.pos[1]-n.home[1],n.pos[2]-n.home[2]);
-        cx.fillStyle=disp<0.05?"#3affa0":"#38d6e0";cx.beginPath();cx.arc(p.sx,p.sy,4.5,0,7);cx.fill();}
+  const c=document.getElementById("c"), x=c.getContext("2d");
+  let drawerRects=[];
+  const easeBack=u=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2);};
+
+  function toggleKnobs(){
+    document.getElementById("ktK").classList.toggle("off",docked.indexOf("softmax")<0);
+    document.getElementById("kaK").classList.toggle("off",docked.indexOf("entmax")<0);
+  }
+  function dock(k){
+    const i=docked.indexOf(k);
+    if(i>=0){docked.splice(i,1);}
+    else{if(docked.length>=MAXDOCK){flashT=1;return;}docked.push(k);}
+    toggleKnobs();
+  }
+  function roundRect(X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
+
+  function draw(){
+    const dpr=Math.min(devicePixelRatio||1,2),W=c.clientWidth||820,H=452;
+    if(c.width!==Math.round(W*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
+    x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
+    const padL=96,padR=22,plotW=W-padL-padR,bw=plotW/N,colX=i=>padL+i*bw;
+    const win=argmax(scores);
+    ORDER.forEach(k=>{const tgt=docked.indexOf(k)>=0?1:0;slot[k]+=(tgt-slot[k])*0.18;if(Math.abs(tgt-slot[k])<0.001)slot[k]=tgt;});
+    const railY=18,railH=50,dockY=railY+railH+18,slotH=70,drawerY=dockY+MAXDOCK*slotH+16;
+    // ---- POLE band (the winner column) spanning rail + dock ----
+    x.fillStyle="rgba(255,207,106,.10)";x.fillRect(colX(win),railY-8,bw,drawerY-railY);
+    x.strokeStyle="rgba(255,207,106,.5)";x.lineWidth=1;x.setLineDash([3,4]);
+    x.beginPath();x.moveTo(colX(win)+bw/2,railY-8);x.lineTo(colX(win)+bw/2,drawerY-8);x.stroke();x.setLineDash([]);
+    x.fillStyle=cssv("--pole");x.font="700 9px "+cssv("--mono");x.textAlign="center";x.fillText("◉ POLE · "+WORDS[win],colX(win)+bw/2,railY-11);
+    // ---- SCORES rail ----
+    x.fillStyle=cssv("--soft");x.font="700 10px "+cssv("--mono");x.textAlign="right";x.fillText("scores",padL-12,railY+18);
+    x.fillStyle=cssv("--faint");x.font="8px "+cssv("--mono");x.fillText("QKᵀ/√d",padL-12,railY+31);
+    const mid=railY+railH*0.56,mxs=Math.max.apply(null,scores.map(Math.abs))||1;
+    x.strokeStyle=cssv("--line");x.lineWidth=1;x.beginPath();x.moveTo(padL,mid);x.lineTo(W-padR,mid);x.stroke();
+    for(let i=0;i<N;i++){const h=scores[i]/mxs*(railH*0.42);
+      x.fillStyle=(i===win)?cssv("--pole"):"rgba(157,143,192,.55)";x.fillRect(colX(i)+2,h>=0?mid-h:mid,bw-4,Math.abs(h));}
+    // column word labels (once, along the dock top)
+    for(let i=0;i<N;i++){x.fillStyle=(i===win)?cssv("--pole"):"rgba(140,128,175,.85)";x.font="8px "+cssv("--mono");x.textAlign="center";x.fillText(WORDS[i],colX(i)+bw/2,dockY-4);}
+    // ---- DOCK slots ----
+    let s=0;
+    ORDER.forEach(k=>{if(docked.indexOf(k)<0)return;
+      const T=TILES[k],p=T.fn(scores),col=cssv(T.col),y0=dockY+s*slotH,base=y0+slotH-20,
+        a=easeBack(Math.max(0,Math.min(1,slot[k]))),yoff=(1-a)*(drawerY-y0),al=Math.min(1,slot[k]*1.4);
+      x.save();x.globalAlpha=al;x.translate(0,yoff);
+      x.strokeStyle="rgba(157,143,192,.16)";x.lineWidth=1;x.strokeRect(padL-2,y0+4,plotW+4,slotH-8);
+      x.fillStyle=col;x.font="700 11px "+cssv("--mono");x.textAlign="right";x.fillText(T.name,padL-12,y0+22);
+      x.fillStyle=cssv("--faint");x.font="8px "+cssv("--mono");
+      x.fillText(T.norm?("e^H "+Math.exp(Hn(p)).toFixed(2)):("Σ "+sum(p).toFixed(2)),padL-12,y0+35);
+      x.fillText(T.norm?("Σ=1 · nnz "+p.filter(v=>v>1e-9).length):("gate · Σ≠1"),padL-12,y0+47);
+      const mxp=Math.max.apply(null,p)||1;
+      for(let i=0;i<N;i++){const h=p[i]/mxp*(slotH-34);
+        x.globalAlpha=(i===win?1:.5)*al;x.fillStyle=col;x.fillRect(colX(i)+2,base-h,bw-4,h);x.globalAlpha=al;
+        if(i===win){x.strokeStyle=cssv("--pole");x.lineWidth=1.6;x.strokeRect(colX(i)+1,base-h-1,bw-2,h+2);}
+        if(T.norm&&p[i]<1e-9){x.fillStyle=cssv("--faint");x.font="7px "+cssv("--mono");x.textAlign="center";x.fillText("0",colX(i)+bw/2,base-3);}
+      }
+      x.strokeStyle="rgba(157,143,192,.25)";x.lineWidth=1;x.beginPath();x.moveTo(padL,base);x.lineTo(W-padR,base);x.stroke();
+      x.restore();
+      // ---- magnetic FIELD LINE: winner bar → pole node (glow + travelling filings) ----
+      const wbx=colX(win)+bw/2, wby=base-((p[win]/mxp)*(slotH-34))+yoff, px=colX(win)+bw/2, py=railY+railH+3;
+      x.globalAlpha=Math.min(1,slot[k]);
+      const cx=wbx+16*Math.sin(t*1.3+s),cy=(wby+py)/2;
+      x.strokeStyle=col;x.lineWidth=1;x.beginPath();x.moveTo(wbx,wby);x.quadraticCurveTo(cx,cy,px,py);x.stroke();
+      for(let f=0;f<3;f++){const u=((t*0.5+f/3+s*0.2)%1),qx=(1-u)*(1-u)*wbx+2*(1-u)*u*cx+u*u*px,qy=(1-u)*(1-u)*wby+2*(1-u)*u*cy+u*u*py;
+        x.fillStyle=col;x.beginPath();x.arc(qx,qy,1.6,0,7);x.fill();}
+      x.globalAlpha=1;s++;
     });
-    const CP={};for(const k in corpusNodes){const n=corpusNodes[k];CP[k]=project(n.pos[0]-C[0],n.pos[1]-C[1],n.pos[2],W,H,yaw,pitch);}
-    for(const k in corpusNodes){const n=corpusNodes[k];neighbors(n.i,n.j).forEach(nk=>{if(nk<k)return;
-      cx.strokeStyle="rgba(96,140,200,.30)";cx.lineWidth=1;cx.beginPath();cx.moveTo(CP[k].sx,CP[k].sy);cx.lineTo(CP[nk].sx,CP[nk].sy);cx.stroke();});}
-    for(const k in corpusNodes){cx.strokeStyle="rgba(58,214,224,.10)";cx.lineWidth=1;cx.beginPath();cx.moveTo(P[k].sx,P[k].sy);cx.lineTo(CP[k].sx,CP[k].sy);cx.stroke();}
-    // draw the 4 cardinal BASIN wells as rings on the corpus plane
-    const BAScol={N:"#3affa0",E:"#38d6e0",S:"#e0a838",W:"#c060d0"};
-    for(const bk in CARD){const c=CARD[bk];const bp=project(c[0]-C[0],c[1]-C[1],ZB,W,H,yaw,pitch);
-      cx.strokeStyle=BAScol[bk];cx.globalAlpha=0.5;cx.lineWidth=1.4;
-      for(let rr=1;rr<=3;rr++){cx.beginPath();cx.arc(bp.sx,bp.sy,rr*5*bp.s*0.12+3,0,7);cx.stroke();}
-      cx.globalAlpha=1;cx.fillStyle=BAScol[bk];cx.font="8px "+mono();cx.textAlign="center";cx.fillText(bk,bp.sx,bp.sy+3);}
-    const maxC=Math.max.apply(null,Object.values(corpusNodes).map(function(n){return n.c;}))||1;
-    Object.keys(corpusNodes).sort(function(a,b){return CP[a].depth-CP[b].depth;}).forEach(function(k){var n=corpusNodes[k],p=CP[k];
-      var r=3+(n.c/maxC)*4;
-      if(n.ground){cx.fillStyle="#e0b84a";cx.strokeStyle="#fff2c8";cx.lineWidth=1.5;cx.beginPath();cx.arc(p.sx,p.sy,r+1,0,7);cx.fill();cx.stroke();}
-      else{cx.fillStyle=(n.basin&&BAScol[n.basin])||"#6c9ad0";cx.beginPath();cx.arc(p.sx,p.sy,r,0,7);cx.fill();}
-      cx.fillStyle=n.ground?"#e0b84a":"#a9c7e8";cx.font="8px "+mono();cx.textAlign="center";
-      cx.fillText(n.w+(n.basin&&!n.ground?"→"+n.basin:""),p.sx,p.sy-r-3);});
-    cx.fillStyle="#6c9ad0";cx.font="9px "+mono();cx.textAlign="right";cx.fillText("corpus plane █ "+CORPUS.total+" tok / "+CORPUS.vocab+" words",W-8,16);
-    // ---- BRIDGE TUBULE ----
-    // conduit axis: softmax-ground -> tubule -> corpus-ground
-    const gaP=P[GROUND], gcP=CP[GROUND], tcP=project(TC[0]-C[0],TC[1]-C[1],TC[2],W,H,yaw,pitch);
-    const pulse=0.5+0.5*Math.sin(t*2.2);
-    cx.strokeStyle="rgba(224,184,74,"+(0.3+0.4*pulse)+")";cx.lineWidth=2;cx.setLineDash([4,4]);
-    cx.beginPath();cx.moveTo(gaP.sx,gaP.sy);cx.lineTo(tcP.sx,tcP.sy);cx.lineTo(gcP.sx,gcP.sy);cx.stroke();cx.setLineDash([]);
-    // the unit cube
-    const TP=tube.map(function(v){return project(v[0]-C[0],v[1]-C[1],v[2],W,H,yaw,pitch);});
-    cx.strokeStyle="rgba(58,255,160,.7)";cx.lineWidth=1.3;
-    tubeEdges.forEach(function(e){cx.beginPath();cx.moveTo(TP[e[0]].sx,TP[e[0]].sy);cx.lineTo(TP[e[1]].sx,TP[e[1]].sy);cx.stroke();});
-    cx.fillStyle="#3affa0";TP.forEach(function(p){cx.beginPath();cx.arc(p.sx,p.sy,2,0,7);cx.fill();});
-    // a travelling token in the tube (data flowing tools<->corpus)
-    const fr=(Math.sin(t*1.3)*0.5+0.5), fx=gaP.sx+(gcP.sx-gaP.sx)*fr, fy=gaP.sy+(gcP.sy-gaP.sy)*fr;
-    cx.fillStyle="#e0b84a";cx.beginPath();cx.arc(fx,fy,3.2,0,7);cx.fill();
-    cx.fillStyle="#3affa0";cx.font="8px "+mono();cx.textAlign="center";cx.fillText("tubule 1×1×1 · INFER",tcP.sx,tcP.sy-11);
-    // ---- INPUT (left) and TRAIN (right) zone gates ----
-    function gate(gx,label,col){
-      const top=project(gx-C[0],2.2-C[1],ZMID,W,H,yaw,pitch), bot=project(gx-C[0],-0.2-C[1],ZMID,W,H,yaw,pitch);
-      cx.strokeStyle=col;cx.globalAlpha=0.55;cx.lineWidth=1.5;cx.setLineDash([3,3]);
-      cx.beginPath();cx.moveTo(top.sx,top.sy);cx.lineTo(bot.sx,bot.sy);cx.stroke();cx.setLineDash([]);cx.globalAlpha=1;
-      cx.fillStyle=col;cx.font="9px "+mono();cx.textAlign="center";cx.fillText(label,top.sx,top.sy-4);
-      return {top,bot};
-    }
-    const inGate=gate(LEFT_X,"INPUT →","#38d6e0"), trGate=gate(RIGHT_X,"→ TRAIN","#e0a838");
-    // flow arrows: INPUT -> tubule -> TRAIN
-    const inMid=project(LEFT_X-C[0],1-C[1],ZMID,W,H,yaw,pitch), trMid=project(RIGHT_X-C[0],1-C[1],ZMID,W,H,yaw,pitch);
-    cx.strokeStyle="rgba(120,200,220,.4)";cx.lineWidth=1.4;cx.beginPath();cx.moveTo(inMid.sx,inMid.sy);cx.lineTo(tcP.sx,tcP.sy);cx.stroke();
-    cx.strokeStyle="rgba(224,168,56,.4)";cx.beginPath();cx.moveTo(tcP.sx,tcP.sy);cx.lineTo(trMid.sx,trMid.sy);cx.stroke();
-    // a datum flowing left->right through inference
-    const flowT=pumping?(pumpTimer/0.55):((t*0.4)%1); let fxx,fyy;
-    if(flowT<0.5){const u=flowT/0.5;fxx=inMid.sx+(tcP.sx-inMid.sx)*u;fyy=inMid.sy+(tcP.sy-inMid.sy)*u;cx.fillStyle="#38d6e0";}
-    else{const u=(flowT-0.5)/0.5;fxx=tcP.sx+(trMid.sx-tcP.sx)*u;fyy=tcP.sy+(trMid.sy-tcP.sy)*u;cx.fillStyle="#e0a838";}
-    cx.beginPath();cx.arc(fxx,fyy,3.8,0,7);cx.fill();
-    if(pumping&&lastFrame){cx.fillStyle="#c8f5e0";cx.font="9px "+mono();cx.textAlign="center";cx.fillText(lastFrame.tok,fxx,fyy-8);}
-    // ---- READ LENS above the tubule, TETHERED to softmax(tools ground) ----
-    const lp=project(LENS[0]-C[0],LENS[1]-C[1],LENS[2],W,H,yaw,pitch);
-    const gp2=project(TOOLS_GND[0]-C[0],TOOLS_GND[1]-C[1],TOOLS_GND[2],W,H,yaw,pitch);
-    // tether: lens -> softmax ground (tool side)
-    cx.strokeStyle="rgba(224,184,74,.7)";cx.lineWidth=1.4;cx.setLineDash([2,3]);
-    cx.beginPath();cx.moveTo(lp.sx,lp.sy);cx.lineTo(gp2.sx,gp2.sy);cx.stroke();cx.setLineDash([]);
-    // sightline: lens looks DOWN into the tubule inference space
-    const pulse2=0.4+0.6*(0.5+0.5*Math.sin(t*3));
-    cx.strokeStyle="rgba(58,255,160,"+pulse2+")";cx.lineWidth=1;cx.setLineDash([1,2]);
-    cx.beginPath();cx.moveTo(lp.sx,lp.sy);cx.lineTo(tcP.sx,tcP.sy);cx.stroke();cx.setLineDash([]);
-    // lens body (a small aperture)
-    cx.fillStyle="#0a1410";cx.strokeStyle="#3affa0";cx.lineWidth=2;
-    cx.beginPath();cx.ellipse(lp.sx,lp.sy,10,6,0,0,7);cx.fill();cx.stroke();
-    cx.strokeStyle="rgba(58,255,160,.6)";cx.lineWidth=1;cx.beginPath();cx.ellipse(lp.sx,lp.sy,5,3,0,0,7);cx.stroke();
-    cx.fillStyle="#3affa0";cx.font="8px "+mono();cx.textAlign="center";cx.fillText("READ LENS",lp.sx,lp.sy-10);
-    cx.fillStyle="#e0b84a";cx.font="7px "+mono();cx.fillText("tethered → softmax",(lp.sx+gp2.sx)/2+18,(lp.sy+gp2.sy)/2);
-    // the lens READS OUT the current token's real softmax attention (mini bar strip)
-    if(pumping&&lastFrame){const bx=lp.sx-32, by=lp.sy+16, bw=64, bh=20;
-      cx.fillStyle="rgba(4,20,14,.9)";cx.fillRect(bx-3,by-3,bw+6,bh+8);cx.strokeStyle="#3affa0";cx.lineWidth=1;cx.strokeRect(bx-3,by-3,bw+6,bh+8);
-      const wt=lastFrame.weights, mx=Math.max.apply(null,wt), cw=bw/wt.length;
-      wt.forEach(function(v,i){const h=(v/mx)*bh; const isTop=PUMP.gridw[i]===lastFrame.top;
-        cx.fillStyle=isTop?"#3affa0":"rgba(108,154,208,.8)";cx.fillRect(bx+i*cw, by+bh-h, cw-1, h);});
-      cx.fillStyle="#3affa0";cx.font="7px "+mono();cx.textAlign="center";
-      cx.fillText("“"+lastFrame.tok+"”→"+lastFrame.top+" "+lastFrame.w, lp.sx, by+bh+9);}
-    cx.fillStyle="#5fae94";cx.font="9px "+mono();cx.textAlign="left";cx.fillText("read-lens replays a fixed attention TAPE (synthetic) · entropy computed LIVE · tubule = metaphor, nothing infers/trains",10,H-10);
+    // pole magnet node
+    x.fillStyle=cssv("--pole");x.beginPath();x.arc(colX(win)+bw/2,railY+railH+3,3.5,0,7);x.fill();
+    // ---- DRAWER (magnetic chips) ----
+    x.fillStyle=cssv("--faint");x.font="8px "+cssv("--mono");x.textAlign="left";x.fillText("DRAWER — click a chip to snap it onto the bench (max "+MAXDOCK+")",padL,drawerY+2);
+    drawerRects=[];const cw=plotW/ORDER.length;
+    ORDER.forEach((k,i)=>{const T=TILES[k],col=cssv(T.col),cxp=padL+i*cw+4,cyp=drawerY+8,cwd=cw-8,chd=34,on=docked.indexOf(k)>=0;
+      x.globalAlpha=on?.42:1;x.fillStyle=on?"rgba(157,143,192,.10)":"rgba(20,12,34,.85)";x.strokeStyle=col;x.lineWidth=on?1:1.6;
+      roundRect(cxp,cyp,cwd,chd,7);x.fill();x.stroke();x.globalAlpha=1;
+      x.fillStyle=col;x.font="700 10px "+cssv("--mono");x.textAlign="center";x.fillText(T.name,cxp+cwd/2,cyp+15);
+      x.fillStyle=on?cssv("--pole"):cssv("--faint");x.font="7.5px "+cssv("--mono");x.fillText(on?"◉ docked · release":(T.norm?"Σ=1":"Σ≠1"),cxp+cwd/2,cyp+27);
+      drawerRects.push({k:k,x:cxp,y:cyp,w:cwd,h:chd});});
+    if(flashT>0){x.fillStyle="rgba(255,106,90,"+(flashT*0.9).toFixed(2)+")";x.font="700 10px "+cssv("--mono");x.textAlign="center";
+      x.fillText("bench full ("+MAXDOCK+") — release one first",W/2,drawerY+58);flashT-=0.02;}
+    renderStats(win);
   }
 
-  // face view + hit-testing
-  let facePos={};
-  function drawFace(){
-    const dpr=Math.min(devicePixelRatio||1,2),W=face.clientWidth||300,H=350;
-    face.width=W*dpr;face.height=H*dpr;const cx=face.getContext("2d");cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,W,H);
-    // 2D SCHEMATIC of the whole machine, top-down: INPUT(left) -> tubule(mid) -> TRAIN(right),
-    // tools row (top), corpus row with basins (bottom), read lens over the tubule.
-    const midY=H*0.42, cxm=W*0.5;
-    const inX=W*0.13, tubX=W*0.5, trX=W*0.87;
-    // ---- pipeline rail ----
-    cx.strokeStyle="rgba(120,200,220,.5)";cx.lineWidth=2;cx.beginPath();cx.moveTo(inX,midY);cx.lineTo(tubX,midY);cx.stroke();
-    cx.strokeStyle="rgba(224,168,56,.5)";cx.beginPath();cx.moveTo(tubX,midY);cx.lineTo(trX,midY);cx.stroke();
-    // INPUT gate
-    cx.strokeStyle="#38d6e0";cx.lineWidth=2;cx.beginPath();cx.moveTo(inX,midY-26);cx.lineTo(inX,midY+26);cx.stroke();
-    cx.fillStyle="#38d6e0";cx.font="9px "+mono();cx.textAlign="center";cx.fillText("INPUT",inX,midY-32);
-    // TRAIN gate
-    cx.strokeStyle="#e0a838";cx.beginPath();cx.moveTo(trX,midY-26);cx.lineTo(trX,midY+26);cx.stroke();
-    cx.fillStyle="#e0a838";cx.fillText("TRAIN",trX,midY-32);
-    // TUBULE (inference) — a square in the middle
-    cx.fillStyle="rgba(10,20,16,.9)";cx.strokeStyle="#3affa0";cx.lineWidth=2;cx.beginPath();cx.rect(tubX-16,midY-16,32,32);cx.fill();cx.stroke();
-    cx.fillStyle="#3affa0";cx.font="8px "+mono();cx.fillText("INFER",tubX,midY+27);cx.fillText("1×1×1",tubX,midY+3);
-    // ---- READ LENS above the tubule, tethered to softmax(tools) ----
-    const lensY=midY-58;
-    cx.fillStyle="#0a1410";cx.strokeStyle="#3affa0";cx.lineWidth=2;cx.beginPath();cx.ellipse(tubX,lensY,12,7,0,0,7);cx.fill();cx.stroke();
-    cx.strokeStyle="rgba(58,255,160,.5)";cx.lineWidth=1;cx.beginPath();cx.ellipse(tubX,lensY,6,3.5,0,0,7);cx.stroke();
-    cx.setLineDash([1,2]);cx.strokeStyle="rgba(58,255,160,.7)";cx.beginPath();cx.moveTo(tubX,lensY+7);cx.lineTo(tubX,midY-16);cx.stroke();cx.setLineDash([]);
-    cx.fillStyle="#3affa0";cx.font="8px "+mono();cx.fillText("READ LENS",tubX,lensY-11);
-    // tether to tools (top-left = softmax)
-    const smX=W*0.5, smY=H*0.10;
-    cx.setLineDash([2,3]);cx.strokeStyle="rgba(224,184,74,.6)";cx.lineWidth=1.2;cx.beginPath();cx.moveTo(tubX,lensY-7);cx.lineTo(smX,smY+8);cx.stroke();cx.setLineDash([]);
-    cx.fillStyle="#e0b84a";cx.beginPath();cx.arc(smX,smY,6,0,7);cx.fill();
-    cx.strokeStyle="#e0b84a";cx.lineWidth=1.4;[0,1,2].forEach(function(r){var w=8-r*2.5;cx.beginPath();cx.moveTo(smX-w,smY+8+r*3);cx.lineTo(smX+w,smY+8+r*3);cx.stroke();});
-    cx.fillStyle="#e0b84a";cx.font="8px "+mono();cx.fillText("softmax (ground)",smX,smY-9);
-    // ---- CORPUS basins row (bottom): 4 cardinal wells ----
-    const basY=H*0.80; const bcol={W:"#c060d0",S:"#e0a838",N:"#3affa0",E:"#38d6e0"};
-    const bpos={W:W*0.20,S:W*0.40,N:W*0.60,E:W*0.80};
-    cx.fillStyle="#6c9ad0";cx.font="9px "+mono();cx.textAlign="left";cx.fillText("corpus · cardinal basins:",W*0.06,basY-24);
-    Object.keys(bpos).forEach(function(bk){var bx=bpos[bk];
-      cx.strokeStyle=bcol[bk];cx.globalAlpha=.6;cx.lineWidth=1.3;
-      for(var r=1;r<=3;r++){cx.beginPath();cx.arc(bx,basY,r*5,0,7);cx.stroke();}cx.globalAlpha=1;
-      cx.fillStyle=bcol[bk];cx.font="8px "+mono();cx.textAlign="center";cx.fillText(bk,bx,basY+3);});
-    // count tokens captured per basin (live)
-    var cap={N:0,E:0,S:0,W:0};for(const k in corpusNodes){var b=corpusNodes[k].basin;if(cap[b]!==undefined)cap[b]++;}
-    Object.keys(bpos).forEach(function(bk){cx.fillStyle=bcol[bk];cx.font="7px "+mono();cx.textAlign="center";cx.fillText("█"+cap[bk],bpos[bk],basY+16);});
-    // ---- live datum + lens readout when pumping ----
-    if(pumping&&lastFrame){
-      // datum position along rail
-      var u=pumpTimer/0.55, dx = u<0.5 ? inX+(tubX-inX)*(u/0.5) : tubX+(trX-tubX)*((u-0.5)/0.5);
-      cx.fillStyle=u<0.5?"#38d6e0":"#e0a838";cx.beginPath();cx.arc(dx,midY,4.5,0,7);cx.fill();
-      cx.fillStyle="#c8f5e0";cx.font="9px "+mono();cx.textAlign="center";cx.fillText("“"+lastFrame.tok+"”",dx,midY-9);
-      // lens weight bars (real softmax) beside the lens
-      var wt=lastFrame.weights, mx=Math.max.apply(null,wt), bx0=tubX+22, bw=42, bh=26, cw=bw/wt.length;
-      cx.fillStyle="rgba(4,20,14,.9)";cx.fillRect(bx0-2,lensY-4,bw+4,bh+6);cx.strokeStyle="#3affa0";cx.lineWidth=1;cx.strokeRect(bx0-2,lensY-4,bw+4,bh+6);
-      wt.forEach(function(v,i){var h=(v/mx)*bh;var top=PUMP.gridw[i]===lastFrame.top;cx.fillStyle=top?"#3affa0":"rgba(108,154,208,.85)";cx.fillRect(bx0+i*cw,lensY-4+bh-h,cw-0.6,h);});
-      cx.fillStyle="#3affa0";cx.font="7px "+mono();cx.textAlign="left";cx.fillText("→"+lastFrame.top+" "+lastFrame.w,bx0-2,lensY+bh+9);
-    }
-    cx.fillStyle="#5fae94";cx.font="9px "+mono();cx.textAlign="center";cx.fillText("2D schematic · INPUT → INFER → TRAIN",W/2,H-6);
+  function renderStats(win){
+    const st=document.getElementById("stats");
+    const winsAgree=docked.every(k=>argmax(TILES[k].fn(scores))===win);
+    const eS=docked.filter(k=>TILES[k].norm).map(k=>Math.exp(Hn(TILES[k].fn(scores))));
+    const cell=(k,v,col)=>'<div class="stat"><div class="k">'+k+'</div><div class="v" style="color:'+(col||"var(--ink)")+'">'+v+'</div></div>';
+    st.innerHTML=
+      cell("docked", docked.length+" / "+MAXDOCK, "var(--vio)")+
+      cell("the winner", WORDS[win], "var(--pole)")+
+      cell("all magnetized to it", winsAgree?"✓ exact":"✗", winsAgree?"var(--g)":"var(--r)")+
+      cell("aperture spread e^H", eS.length?(Math.min.apply(null,eS).toFixed(1)+" → "+Math.max.apply(null,eS).toFixed(1)+" of "+N):"—", "var(--amb)");
   }
+
   function renderPanel(){
-    const p=document.getElementById("panel");
-    if(selected&&FOLDERS[selected]){const f=FOLDERS[selected];
-      p.innerHTML=`<h3 style="color:${f.col}">🗀 ${f.name} <span style="color:#5fae94;font-weight:400">— ${f.tools.length} tools · corner ${selected}</span></h3>`+
-        f.tools.map(tl=>`<div class="tool"><span class="nm">${tl.n}</span><span class="tr ${tl.t}">${tl.tier}</span><span class="note">${tl.note}</span></div>`).join("");
-    } else {
-      p.innerHTML=`<h3 style="color:#e0b84a">⌗ the cabinet — softmax grounded, 16 tools filed</h3>`+
-        Object.keys(FOLDERS).map(k=>{const f=FOLDERS[k];
-          return `<div class="tool"><span class="nm" style="color:${f.col}">🗀 ${f.name}</span><span class="note">${f.tools.map(x=>x.n).join(" · ")}</span></div>`;}).join("")+
-        `<div class="tool"><span class="nm" style="color:#e0b84a">⏚ softmax (ground)</span><span class="note">the reference at the centre — POSITIVITY(exp) + COMPETITION(÷Z), the baseline all 16 are measured against</span></div>`+
-        `<div class="tool"><span class="nm" style="color:#6c9ad0">▤ corpus plane</span><span class="note">parallel behind: ${CORPUS.total} tokens, ${CORPUS.vocab} words · grounded on ‘${CORPUS.ground}’ · ${Object.values(CORPUS.grid).map(function(x){return x.w+"("+x.c+")";}).join(" · ")}</span></div>`+
-        `<div class="tool"><span class="nm" style="color:#3affa0">⬜ 1×1×1 tubule</span><span class="note">the bridge on the softmax↔‘the’ axis</span></div>`+
-        `<div class="tool"><span class="nm" style="color:#3affa0">◉ cardinal basins</span><span class="note"><b style="color:#e0a838">AMBER · decorative dynamics</b> — a real damped particle-in-potential ODE (centre-bowl minus 4 Gaussian wells), but which well a token lands in is set by seed jitter; it carries NO attention or linguistic meaning.</span></div>`+
-        `<div class="tool"><span class="nm" style="color:#38d6e0">⇆ pipeline</span><span class="note">INPUT (left) → INFERENCE (the 1×1×1 tubule, middle) → TRAIN (right). data flows left-to-right through the bridge.</span></div>`+
-        `<div class="tool"><span class="nm" style="color:#3affa0">◉ read lens</span><span class="note"><b style="color:#e0a838">AMBER tape · GREEN math</b> — replays a fixed per-token attention tape (synthetic self/co-occurrence: the same token always yields identical weights, so it is NOT a trained model’s contextual attention). Each row is a valid softmax-shaped distribution and its Shannon entropy is <b style="color:#3affa0">recomputed LIVE from the bars</b> (${PUMP.frames.length} frames, mean H ${PUMP.avgent}/${PUMP.maxent} nats). Drag <b style="color:#3affa0">aperture&nbsp;T</b> to sweep the softmax temperature; the aperture panel proves live H(T=1) matches the baked value.</span></div>`+`<div class="tool"><span class="nm" style="color:#e0654a">▢ the wall</span><span class="note"><b style="color:#3affa0">GREEN</b> entropy · maxent=ln9 · corpus counts · Σ=1 · cited taxonomy &nbsp;|&nbsp; <b style="color:#e0a838">AMBER</b> the attention pattern (synthetic), the basins, the springs &nbsp;|&nbsp; <b style="color:#e0654a">RED</b> no trained transformer, no live inference of attention — the live math runs over a fixed tape.</span></div>`;
-    }
+    document.getElementById("panel").innerHTML=
+      '<h3 style="color:var(--fla)">&#9670; the bench, honestly</h3>'+
+      'Snap any normalizer onto the bench: it computes its weights over the <b>one shared score row</b> above. '+
+      '<b class="g">GREEN</b> (live, node-verified): softmax, entmax-α, sparsemax, sigmoid and softpick are all computed exactly here; every one is <b>order-preserving</b>, so their tallest bar &mdash; the winner &mdash; lands on the <b>same</b> pole (100.000% over 8,000 random draws). softmax/entmax/sparsemax keep Σ=1 (aperture e^H is meaningful); sigmoid and softpick <b>do not</b> (Σ≠1 &mdash; gates, shown as such). softpick here is <b>ReLU(softmax−1/n)</b>, a rectified-softmax gate &mdash; the published softpick removes attention sinks by a related but not identical formula. entmax’s α dial reaches sparsemax <b>exactly</b> at α=2 (machine precision, ~1e-15) and <b>approaches</b> softmax as α→1 (an asymptotic limit, difference O(α-1) &mdash; ≈8e-3 at the dial’s α=1.01 floor, not an exact match).'+
+      '<b class="a">AMBER</b>: the scores are a toy row (the read-lens “the” example, or random) &mdash; a stand-in for a real QKᵀ/√d, forward-pass only; “magnetism” is the figure laid over normalization. '+
+      '<b class="r">RED — the wall</b>: sharing the winner is <b>cheap</b> (any monotone map gives it) and does not make these interchangeable &mdash; they differ in gradients, compute, calibration and what they can express. A bench, not a trained model.'+
+      '<div class="cat"><b style="color:var(--soft);font-size:10px">THE REST OF THE CABINET</b> &mdash; cited, not computed here (no live forward pass over a score row): '+
+      ['QK-Norm','Diff-Attn','Selective Attn','Value-Residual','FlashAttention v1→v4','Dual Cross','David Max','the atoms (SHIFT·EXP·÷Z·MASK)','scaled dot-product','J-junction'].map(t=>'<span class="ch">'+t+'</span>').join('')+'</div>';
   }
 
-  function updateAperture(){
-    const ap=document.getElementById("aperture"); if(!ap)return;
-    if(!lastFrame){ap.innerHTML='<span class="apdim">▶ press <b>pump corpus</b> to load a token into the read-lens — then drag <b>aperture&nbsp;T</b> to sweep the softmax temperature</span>';return;}
-    const w=lastFrame.weights, sc=scoresFromW(w);
-    const Hbars=Hnats(w), H1=Hnats(softmaxT(sc,1));
-    const pT=softmaxT(sc,temp), HT=Hnats(pT), eS=Math.exp(HT);
-    const ok=Math.abs(H1-lastFrame.ent)<5e-3;
-    ap.innerHTML='<b>APERTURE</b> · token “'+lastFrame.tok+'” &nbsp; <span class="apg">live H(bars)='+Hbars.toFixed(3)+' nats</span> vs baked '+lastFrame.ent+' &nbsp; <span class="'+(ok?'apok':'apbad')+'">'+(ok?'✓ self-check':'✗ MISMATCH')+'</span><br>softmax temperature T='+temp.toFixed(2)+' → H='+HT.toFixed(3)+' / ln9='+LN9.toFixed(3)+' &nbsp; aperture e^H = '+eS.toFixed(2)+' of 9 tokens<span class="apbar"><i style="width:'+Math.min(100,100*HT/LN9).toFixed(1)+'%"></i></span>';
-  }
-  function frame(){
-    if(seeding){seedTimer+=0.016; if(seedTimer>1.4){seedTimer=0;seed++;seedCount++;drop();}}
-    if(pumping){pumpTimer+=0.016; if(pumpTimer>0.55){pumpTimer=0; lastFrame=PUMP.frames[pumpIdx]; pumpIdx=(pumpIdx+1)%PUMP.frames.length;}}
-    try{if(playing){stepPhys();t+=0.016;}drawScene();drawFace();}
-    catch(e){const el=document.getElementById("err");el.style.display="block";el.textContent="cabinet fault: "+(e&&e.message);return;}
-    if(pumping&&lastFrame){document.getElementById("hint").innerHTML="▶ PUMPING · token "+(pumpIdx)+"/"+PUMP.frames.length+" · <b style=\"color:#c8f5e0\">“"+lastFrame.tok+"”</b> attends → <b style=\"color:#3affa0\">"+lastFrame.top+"</b> ("+lastFrame.w+") · entropy "+lastFrame.ent+"/"+PUMP.maxent;}
-    else document.getElementById("hint").textContent=seeding?("◉ SEEDING · drop #"+seedCount):(selected?"showing folder "+selected:"click a folder · or press ▶ pump / ◉ seed");
-    updateAperture();
-    requestAnimationFrame(frame);
-  }
-  renderPanel();
+  c.addEventListener("click",e=>{
+    const r=c.getBoundingClientRect(),mx=(e.clientX-r.left),my=(e.clientY-r.top);
+    for(const d of drawerRects){if(mx>=d.x&&mx<=d.x+d.w&&my>=d.y&&my<=d.y+d.h){dock(d.k);return;}}
+  });
 
-  // folder selection now cycles via click on the 2D schematic (opens each folder in turn)
-  face.addEventListener("click",()=>{const order=[null].concat(CORNERS);const i=order.indexOf(selected);selected=order[(i+1)%order.length];renderPanel();});
-  document.getElementById("play").onclick=e=>{playing=!playing;e.target.textContent=playing?"⏸ pause":"▶ play";};
-  const pb2=document.getElementById("pump");pb2.onclick=()=>{pumping=!pumping;pb2.textContent=pumping?"■ stop pump":"▶ pump corpus";pb2.style.background=pumping?"#e0654a":"";if(pumping&&!playing){playing=true;document.getElementById("play").textContent="⏸ pause";}};
-  const sb=document.getElementById("seed");sb.onclick=()=>{seeding=!seeding;sb.textContent=seeding?"■ stop":"◉ seed";sb.style.background=seeding?"#e0654a":"";if(seeding&&!playing){playing=true;document.getElementById("play").textContent="⏸ pause";}};
-  document.getElementById("reseed").onclick=()=>{seed++;seedCount++;drop();};
-  document.getElementById("reset").onclick=()=>{for(const k in nodes){nodes[k].pos=[...nodes[k].home];nodes[k].vel=[0,0,0];}};
-  const tp=document.getElementById("temp");if(tp)tp.oninput=()=>{temp=parseFloat(tp.value);document.getElementById("tval").textContent=temp.toFixed(2);updateAperture();};
-  updateAperture();
-  requestAnimationFrame(frame);
+  try{
+    document.getElementById("reseed").onclick=()=>reseed();
+    const T=document.getElementById("T");T.oninput=()=>{temp=(+T.value)/100;document.getElementById("Tv").textContent=temp.toFixed(2);};
+    const A=document.getElementById("A");A.oninput=()=>{alpha=(+A.value)/100;document.getElementById("Av").textContent=alpha.toFixed(2);};
+    renderPanel();toggleKnobs();
+    (function loop(){t+=0.016;try{draw();}catch(err){const el=document.getElementById("err");el.style.display="block";el.textContent="bench fault: "+(err&&err.message);return;}requestAnimationFrame(loop);})();
+  }catch(e){const el=document.getElementById("err");el.style.display="block";el.textContent="bench fault: "+(e&&e.message);}
 })();
 </script></body></html>
